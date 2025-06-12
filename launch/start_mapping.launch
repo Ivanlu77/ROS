@@ -1,0 +1,23 @@
+<launch>
+  <!-- 激光转发节点 -->
+  <node pkg="network_odom" type="relay_scan.py" name="relay_scan" output="screen" />
+
+  <!-- 里程数据 -->
+  <node pkg="network_odom" type="network_odom_to_ros.py" name="network_odom" output="screen"/>
+
+  <!-- 静态 tf：雷达在机器人上的位置 -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="tf_base_lidar"
+        args="0 0 0 0 0 0 base_link lidar_frame"/>
+
+  <!-- GMapping 核心 -->
+  <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
+    <param name="base_frame" value="base_link"/>
+    <param name="odom_frame" value="odom"/>
+    <param name="map_update_interval" value="2.0"/>
+    <remap from="scan" to="/scan"/>
+  </node>
+
+  <!-- 可视化 -->
+  <node pkg="rviz" type="rviz" name="rviz"/>
+</launch>
+
