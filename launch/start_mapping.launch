@@ -1,23 +1,26 @@
 <launch>
-  <!-- 激光转发节点 -->
-  <node pkg="network_odom" type="relay_scan.py" name="relay_scan" output="screen" />
 
-  <!-- 里程数据 -->
+  <!-- 里程计（保持不变） -->
   <node pkg="network_odom" type="network_odom_to_ros.py" name="network_odom" output="screen"/>
 
-  <!-- 静态 tf：雷达在机器人上的位置 -->
-  <node pkg="tf2_ros" type="static_transform_publisher" name="tf_base_lidar"
-        args="0 0 0 0 0 0 base_link lidar_frame"/>
+  <!-- 激光修正节点：把 /LiDAR/LD06 → /scan_fixed -->
+  <node pkg="network_odom" type="relay_scan_fix.py" name="relay_scan_fix" output="screen"/>
 
-  <!-- GMapping 核心 -->
-  <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
+  <!-- 静态 TF：base_link → lidar_frame，每 100 ms 发送一次 -->
+  <node pkg="tf" type="static_transform_publisher"
+        name="base_to_lidar"
+        args="0 0 0 0 0 0 base_link lidar_frame 100"/>
+
+  <!-- GMapping，只订修正后的话题 -->
+  <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping">
+    <remap from="scan" to="/scan_fixed"/>
     <param name="base_frame" value="base_link"/>
     <param name="odom_frame" value="odom"/>
-    <param name="map_update_interval" value="2.0"/>
-    <remap from="scan" to="/scan"/>
+    <param name="maxUrange" value="12.0"/>
+    <param name="maxRange"  value="12.0"/>
   </node>
 
-  <!-- 可视化 -->
+  <!-- RViz -->
   <node pkg="rviz" type="rviz" name="rviz"/>
 </launch>
 
